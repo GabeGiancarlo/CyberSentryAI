@@ -1,26 +1,29 @@
-import pyshark
-from time import sleep
-from sklearn.preprocessing import MinMaxScaler
+#!/usr/bin/env python3
+from scapy.all import sniff
 from tensorflow.keras.models import load_model
 import numpy as np
+import time
+from pathlib import Path
 
-# Load the trained model and scaler
-model = load_model('../models/lstm_model.h5')
-scaler = MinMaxScaler()  # Load or fit scaler as needed
+# Load the trained model using absolute path
+model_path = Path("/Users/gabegiancarlo/Projects/CyberSentryAI/models/lstm_model.h5")
+model = load_model(model_path)
 
-def extract_features(packet):
-    # Placeholder: Extract features like packet length, protocol, etc.
-    # This will depend on your dataset features
-    features = [float(packet.length), float(packet.protocol)]  # Example
-    return features
+def packet_callback(packet):
+    # Extract packet length (or other features)
+    if packet.haslayer('IP'):
+        length = packet['IP'].len
+        # Preprocess the feature
+        X = np.array([[length]])
+        X = X.reshape((X.shape[0], 1, X.shape[1]))  # Reshape for LSTM [samples, timesteps, features]
+        # Make prediction
+        prediction = model.predict(X, verbose=0)[0][0]
+        label = 'attack' if prediction >= 0.5 else 'benign'
+        print(f"Packet Length: {length} | Prediction: {label} (probability: {prediction:.2f})")
 
-# Capture live packets
-capture = pyshark.LiveCapture(interface='eth0')
-for packet in capture.sniff_continuously(packet_count=10):
-    features = extract_features(packet)
-    features = scaler.transform([features])
-    features = np.array(features).reshape((1, 1, len(features[0])))
-    prediction = model.predict(features)
-    if prediction > 0.5:
-        print("Intrusion detected!")
-    sleep(1)  # Simulate real-time processing
+# Capture packets (run as root if on macOS)
+print("Starting real-time detection... (Press Ctrl+C to stop)")
+try:
+    sniff(prn=packet_callback, store=0, count=100)  # Capture 100 packets
+except PermissionError:
+    print("Error: You may need to run this script with sudo on macOS (e.g., 'sudo python3 src/realtime_detection.py')")
