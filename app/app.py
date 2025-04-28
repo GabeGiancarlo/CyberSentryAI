@@ -171,99 +171,86 @@ app.layout = html.Div([
 
     # Main content (fixed layout to prevent scrolling)
     html.Div([
-        # Left Section (Graph)
+        # Left Section (Graph and Monitoring Buttons)
         html.Div([
-            dcc.Graph(id='live-graph', style={'height': '400px', 'width': '100%'}),  # Reduced height
+            # Graph
+            html.Div([
+                dcc.Graph(id='live-graph', style={'height': 'calc(100vh - 140px)', 'width': '100%'}),  # Full height minus space for buttons
+            ], style={'width': '100%'}),
+
+            # Monitoring Controls (below the graph)
+            html.Div([
+                html.Button('Start Monitoring', id='start-button', n_clicks=0, style={
+                    'backgroundColor': PRIMARY_BLUE,
+                    'color': TEXT_COLOR,
+                    'fontFamily': FONT_FAMILY,
+                    'fontSize': '14px',
+                    'fontWeight': 'bold',
+                    'padding': '10px',
+                    'margin': '5px',
+                    'border': 'none',
+                    'borderRadius': '5px'
+                }),
+                html.Button('Stop Monitoring', id='stop-button', n_clicks=0, style={
+                    'backgroundColor': PRIMARY_BLUE,
+                    'color': TEXT_COLOR,
+                    'fontFamily': FONT_FAMILY,
+                    'fontSize': '14px',
+                    'fontWeight': 'bold',
+                    'padding': '10px',
+                    'margin': '5px',
+                    'border': 'none',
+                    'borderRadius': '5px'
+                }),
+                html.Div(id='capture-status', children='Monitoring: Stopped', style={
+                    'color': TEXT_COLOR,
+                    'fontFamily': FONT_FAMILY,
+                    'fontSize': '14px',
+                    'margin': '10px'
+                }),
+            ], style={'textAlign': 'center', 'marginTop': '10px'})
         ], style={
             'width': '60%',
             'display': 'inline-block',
             'verticalAlign': 'top',
             'padding': '20px',
-            'height': 'calc(100vh - 60px)',  # Adjust for nav bar height
+            'height': 'calc(100vh - 60px)',
             'overflow': 'hidden'
         }, className='left-section'),
 
-        # Right Section (Monitoring Options, Alerts, Attack Details)
+        # Right Section (Analysis Options, Alerts, Attack Details)
         html.Div([
-            # Monitoring and Analysis Options
+            # Analysis Options
             html.Div([
-                # Controls
-                html.Div([
-                    html.Button('Start Monitoring', id='start-button', n_clicks=0, style={
-                        'backgroundColor': PRIMARY_BLUE,
+                html.H3("Analysis Options", style={
+                    'color': TEXT_COLOR,
+                    'fontFamily': FONT_FAMILY,
+                    'fontSize': '18px',
+                    'fontWeight': 'bold'
+                }),
+                dcc.Dropdown(
+                    id='attack-type-filter',
+                    options=[
+                        {'label': 'All', 'value': 'all'},
+                        {'label': 'DDoS', 'value': 'ddos'},
+                        {'label': 'Port Scan', 'value': 'portscan'},
+                        {'label': 'Web Attack', 'value': 'webattack'}
+                    ],
+                    value='all',
+                    style={
+                        'backgroundColor': BOX_BG,
                         'color': TEXT_COLOR,
                         'fontFamily': FONT_FAMILY,
                         'fontSize': '14px',
-                        'fontWeight': 'bold',
-                        'padding': '10px',
                         'margin': '5px',
-                        'border': 'none',
-                        'borderRadius': '5px'
-                    }),
-                    html.Button('Stop Monitoring', id='stop-button', n_clicks=0, style={
-                        'backgroundColor': PRIMARY_BLUE,
-                        'color': TEXT_COLOR,
-                        'fontFamily': FONT_FAMILY,
-                        'fontSize': '14px',
-                        'fontWeight': 'bold',
-                        'padding': '10px',
-                        'margin': '5px',
-                        'border': 'none',
-                        'borderRadius': '5px'
-                    }),
-                    html.Div(id='capture-status', children='Monitoring: Stopped', style={
-                        'color': TEXT_COLOR,
-                        'fontFamily': FONT_FAMILY,
-                        'fontSize': '14px',
-                        'margin': '10px'
-                    }),
-                ], style={'textAlign': 'center'}),
-
-                # Analysis Options
-                html.Div([
-                    html.H3("Analysis Options", style={
-                        'color': TEXT_COLOR,
-                        'fontFamily': FONT_FAMILY,
-                        'fontSize': '18px',
-                        'fontWeight': 'bold'
-                    }),
-                    dcc.Dropdown(
-                        id='attack-type-filter',
-                        options=[
-                            {'label': 'All', 'value': 'all'},
-                            {'label': 'DDoS', 'value': 'ddos'},
-                            {'label': 'Port Scan', 'value': 'portscan'},
-                            {'label': 'Web Attack', 'value': 'webattack'}
-                        ],
-                        value='all',
-                        style={
-                            'backgroundColor': BOX_BG,
-                            'color': TEXT_COLOR,
-                            'fontFamily': FONT_FAMILY,
-                            'fontSize': '14px',
-                            'margin': '5px',
-                            'width': '100%'
-                        },
-                        clearable=False,
-                        className='Select'
-                    ),
-                    dcc.Upload(
-                        id='upload-pcap',
-                        children=html.Button('Upload PCAP File', style={
-                            'backgroundColor': PRIMARY_BLUE,
-                            'color': TEXT_COLOR,
-                            'fontFamily': FONT_FAMILY,
-                            'fontSize': '14px',
-                            'fontWeight': 'bold',
-                            'padding': '10px',
-                            'margin': '5px',
-                            'border': 'none',
-                            'borderRadius': '5px',
-                            'width': '100%'
-                        }),
-                        multiple=False
-                    ),
-                    html.Button('Analyze Packet Patterns', id='analyze-button', n_clicks=0, style={
+                        'width': '100%'
+                    },
+                    clearable=False,
+                    className='Select'
+                ),
+                dcc.Upload(
+                    id='upload-pcap',
+                    children=html.Button('Upload PCAP File', style={
                         'backgroundColor': PRIMARY_BLUE,
                         'color': TEXT_COLOR,
                         'fontFamily': FONT_FAMILY,
@@ -274,8 +261,21 @@ app.layout = html.Div([
                         'border': 'none',
                         'borderRadius': '5px',
                         'width': '100%'
-                    })
-                ], style={'marginTop': '10px'}),
+                    }),
+                    multiple=False
+                ),
+                html.Button('Analyze Packet Patterns', id='analyze-button', n_clicks=0, style={
+                    'backgroundColor': PRIMARY_BLUE,
+                    'color': TEXT_COLOR,
+                    'fontFamily': FONT_FAMILY,
+                    'fontSize': '14px',
+                    'fontWeight': 'bold',
+                    'padding': '10px',
+                    'margin': '5px',
+                    'border': 'none',
+                    'borderRadius': '5px',
+                    'width': '100%'
+                })
             ], style={'marginBottom': '20px', 'width': '90%'}),
 
             # Alerts and Attack Details (stacked)
