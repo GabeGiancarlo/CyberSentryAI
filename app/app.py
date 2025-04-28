@@ -93,7 +93,7 @@ def infer_attack_type(packet_length):
     else:
         return 'Web Attack', "Web Attack: Smaller packets may indicate web-based exploits."
 
-# Include Montserrat font via Google Fonts
+# Include Montserrat font via Google Fonts and custom CSS for dropdown
 app.index_string = '''
 <!DOCTYPE html>
 <html>
@@ -124,6 +124,21 @@ app.index_string = '''
             .Select-value-label {
                 color: #E0E0E0 !important;
             }
+            /* Ensure layout sections are displayed correctly */
+            .main-content {
+                display: flex;
+                flex-direction: row;
+                width: 100%;
+            }
+            .left-section {
+                width: 60%;
+                display: inline-block;
+            }
+            .right-section {
+                width: 40%;
+                display: inline-block;
+                vertical-align: top;
+            }
         </style>
     </head>
     <body>
@@ -147,7 +162,7 @@ app.layout = html.Div([
             'fontSize': '32px',
             'fontWeight': 'bold',
             'fontStyle': 'italic',
-            'textAlign': 'left',  # Moved to top left
+            'textAlign': 'left',
             'padding': '10px',
             'backgroundColor': DARK_BG,
             'margin': '0'
@@ -156,7 +171,19 @@ app.layout = html.Div([
 
     # Main content (fixed layout to prevent scrolling)
     html.Div([
-        # Left Section (Monitoring Options, Alerts, Attack Details)
+        # Left Section (Graph)
+        html.Div([
+            dcc.Graph(id='live-graph', style={'height': '400px', 'width': '100%'}),  # Reduced height
+        ], style={
+            'width': '60%',
+            'display': 'inline-block',
+            'verticalAlign': 'top',
+            'padding': '20px',
+            'height': 'calc(100vh - 60px)',  # Adjust for nav bar height
+            'overflow': 'hidden'
+        }, className='left-section'),
+
+        # Right Section (Monitoring Options, Alerts, Attack Details)
         html.Div([
             # Monitoring and Analysis Options
             html.Div([
@@ -214,10 +241,11 @@ app.layout = html.Div([
                             'color': TEXT_COLOR,
                             'fontFamily': FONT_FAMILY,
                             'fontSize': '14px',
-                            'margin': '5px'
+                            'margin': '5px',
+                            'width': '100%'
                         },
                         clearable=False,
-                        className='Select'  # For custom CSS styling
+                        className='Select'
                     ),
                     dcc.Upload(
                         id='upload-pcap',
@@ -230,7 +258,8 @@ app.layout = html.Div([
                             'padding': '10px',
                             'margin': '5px',
                             'border': 'none',
-                            'borderRadius': '5px'
+                            'borderRadius': '5px',
+                            'width': '100%'
                         }),
                         multiple=False
                     ),
@@ -243,10 +272,11 @@ app.layout = html.Div([
                         'padding': '10px',
                         'margin': '5px',
                         'border': 'none',
-                        'borderRadius': '5px'
+                        'borderRadius': '5px',
+                        'width': '100%'
                     })
                 ], style={'marginTop': '10px'}),
-            ], style={'marginBottom': '20px'}),
+            ], style={'marginBottom': '20px', 'width': '90%'}),
 
             # Alerts and Attack Details (stacked)
             html.Div([
@@ -262,16 +292,16 @@ app.layout = html.Div([
                         'color': TEXT_COLOR,
                         'fontFamily': FONT_FAMILY,
                         'fontSize': '14px',
-                        'height': '150px',  # Fixed height for scrollable window
+                        'height': '150px',
                         'overflowY': 'auto',
-                        'margin': '10px',
+                        'margin': '10px 0',
                         'padding': '10px',
                         'backgroundColor': BOX_BG,
                         'borderRadius': '5px'
                     })
-                ], style={'marginBottom': '20px'}),
+                ], style={'marginBottom': '20px', 'width': '90%'}),
 
-                # Attack Details (same styling as Alerts)
+                # Attack Details
                 html.Div([
                     html.H3("Attack Details", style={
                         'color': TEXT_COLOR,
@@ -283,42 +313,32 @@ app.layout = html.Div([
                         'color': TEXT_COLOR,
                         'fontFamily': FONT_FAMILY,
                         'fontSize': '14px',
-                        'height': '150px',  # Fixed height for scrollable window
+                        'height': '150px',
                         'overflowY': 'auto',
-                        'margin': '10px',
+                        'margin': '10px 0',
                         'padding': '10px',
                         'backgroundColor': BOX_BG,
                         'borderRadius': '5px'
                     })
-                ])
-            ], style={'height': 'calc(100vh - 300px)', 'overflow': 'hidden'})  # Adjusted height to fit
-        ], style={
-            'width': '60%',
-            'display': 'inline-block',
-            'verticalAlign': 'top',
-            'padding': '20px',
-            'height': 'calc(100vh - 60px)',  # Adjust for nav bar height
-            'overflow': 'hidden'
-        }),
-
-        # Right Section (Graph at Top)
-        html.Div([
-            dcc.Graph(id='live-graph', style={'height': '400px', 'width': '100%'}),  # Increased height for visibility
+                ], style={'width': '90%'})
+            ], style={'height': 'calc(100vh - 300px)', 'overflow': 'hidden'})
         ], style={
             'width': '40%',
             'display': 'inline-block',
             'verticalAlign': 'top',
             'padding': '20px',
-            'height': 'calc(100vh - 60px)',  # Adjust for nav bar height
+            'height': 'calc(100vh - 60px)',
             'overflow': 'hidden'
-        })
+        }, className='right-section')
     ], style={
         'backgroundColor': DARK_BG,
         'height': '100vh',
         'margin': '0',
-        'paddingTop': '60px',  # Space for nav bar
-        'overflow': 'hidden'
-    }),
+        'paddingTop': '60px',
+        'overflow': 'hidden',
+        'display': 'flex',
+        'flexDirection': 'row'
+    }, className='main-content'),
 
     dcc.Interval(id='interval-component', interval=1000, n_intervals=0)
 ])
@@ -362,7 +382,8 @@ def update_graph_and_alerts(n, attack_filter):
                 xaxis={'title': 'Packet Index', 'titlefont': {'family': FONT_FAMILY, 'color': TEXT_COLOR}, 'tickfont': {'family': FONT_FAMILY, 'color': TEXT_COLOR}},
                 yaxis={'title': 'Packet Length', 'titlefont': {'family': FONT_FAMILY, 'color': TEXT_COLOR}, 'tickfont': {'family': FONT_FAMILY, 'color': TEXT_COLOR}},
                 paper_bgcolor=DARK_BG,
-                plot_bgcolor=DARK_BG
+                plot_bgcolor=DARK_BG,
+                margin=dict(l=40, r=40, t=40, b=40)
             )
         }, "No alerts yet.", "No attack details available."
 
@@ -388,17 +409,23 @@ def update_graph_and_alerts(n, attack_filter):
         line={'color': PRIMARY_BLUE}
     )
 
-    # Generate alerts (same for both sections)
-    alerts = [f"Alert: {p['label'].capitalize()} detected (Probability: {p['probability']:.2f})" for p in predictions[-10:] if p['label'] == 'attack']
+    # Generate alerts with more details
+    alerts = []
+    for data, pred in zip(packet_data[-10:], predictions[-10:]):
+        if pred['label'] == 'attack':
+            attack_type, _ = infer_attack_type(data[0])
+            alerts.append(f"Alert: {attack_type} Attack (Probability: {pred['probability']:.2f}, Packet Length: {data[0]})")
     alerts_text = html.Ul([html.Li(alert) for alert in alerts]) if alerts else "No recent attack alerts."
 
-    # Generate attack details (same alerts with additional details)
+    # Generate attack details with more detailed information
     attack_info = []
-    for data, pred in zip(packet_data[-10:], predictions[-10:]):  # Match the last 10 alerts
+    for data, pred in zip(packet_data[-10:], predictions[-10:]):
         if pred['label'] == 'attack':
             attack_type, description = infer_attack_type(data[0])
-            alert_text = f"Alert: {pred['label'].capitalize()} detected (Probability: {pred['probability']:.2f})"
-            attack_info.append(f"{alert_text} - {attack_type}: {description} (Packet Length: {data[0]})")
+            protocol = 'TCP' if data[2] == 1 else 'Other'
+            inter_arrival = data[1]
+            alert_text = f"Alert: {attack_type} Attack (Probability: {pred['probability']:.2f})"
+            attack_info.append(f"{alert_text} - {attack_type}: {description} (Packet Length: {data[0]}, Protocol: {protocol}, Inter-Arrival: {inter_arrival:.3f}s)")
     attack_details = html.Ul([html.Li(info) for info in attack_info]) if attack_info else "No attack details available."
 
     return {
@@ -411,7 +438,8 @@ def update_graph_and_alerts(n, attack_filter):
             paper_bgcolor=DARK_BG,
             plot_bgcolor=DARK_BG,
             showlegend=True,
-            legend={'font': {'family': FONT_FAMILY, 'color': TEXT_COLOR}}
+            legend={'font': {'family': FONT_FAMILY, 'color': TEXT_COLOR}},
+            margin=dict(l=40, r=40, t=40, b=40)
         )
     }, alerts_text, attack_details
 
@@ -450,9 +478,11 @@ def analyze_pcap(contents, filename):
                 prob = pred if pred > 0.5 else 1 - pred
                 if label == 'attack':
                     attack_type, description = infer_attack_type(pkt_len)
-                    alert_text = f"Alert: {label.capitalize()} detected (Probability: {prob:.2f})"
-                    attack_info.append(f"{alert_text} - {attack_type}: {description} (Packet Length: {pkt_len})")
+                    protocol_str = 'TCP' if protocol == 1 else 'Other'
+                    alert_text = f"Alert: {attack_type} Attack (Probability: {prob:.2f}, Packet Length: {pkt_len})"
+                    attack_detail = f"{alert_text} - {attack_type}: {description} (Packet Length: {pkt_len}, Protocol: {protocol_str}, Inter-Arrival: {inter_arrival:.3f}s)"
                     results.append(alert_text)
+                    attack_info.append(attack_detail)
                 # Update global predictions for real-time monitoring consistency
                 packet_data.append([pkt_len, inter_arrival, protocol])
                 predictions.append({'label': label, 'probability': prob})
